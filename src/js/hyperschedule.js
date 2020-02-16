@@ -1196,8 +1196,18 @@ function rerenderCourseSearchResults() {
   courseSearchResultsPlaceholder.style.height =
     gCourseEntityHeight * gFilteredCourseKeys.length + "px";
 
-  courseSearchResultsEnd.textContent =
-    gFilteredCourseKeys.length != 0 ? "End of results" : "No results";
+  if (gFilteredCourseKeys.length != 0) {
+    courseSearchResultsEnd.textContent = "End of results"
+  } else {
+    courseSearchResultsEnd.textContent = ""
+    var img = document.createElement('img');
+    img.src = "https://i.imgur.com/sohWhy9.png";
+    img.width = 100;
+    img.height = 100;
+    courseSearchResultsEnd.appendChild(img);
+  }
+    
+    
 }
 
 function updateSelectedCoursesList() {
