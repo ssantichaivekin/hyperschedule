@@ -7,6 +7,24 @@
 //// Modules
 
 const ics = require("/js/vendor/ics-0.2.0.min.js");
+const firebase = require("firebase");
+require("firebase/firestore");
+
+var firebaseConfig = {
+  apiKey: "AIzaSyCelRaVwcwPV5sPpGYy_AGEpK4TOgA5_iQ",
+  authDomain: "hyperschedule-course-info.firebaseapp.com",
+  databaseURL: "https://hyperschedule-course-info.firebaseio.com",
+  projectId: "hyperschedule-course-info",
+  storageBucket: "hyperschedule-course-info.appspot.com",
+  messagingSenderId: "280583982425",
+  appId: "1:280583982425:web:15145198927778bc831048",
+  measurementId: "G-BMMJ3G37Y0"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
+
+var db = firebase.firestore();
 
 //// Data constants
 
@@ -1265,6 +1283,25 @@ function showSettingsModal() {
   $("#settings-modal").modal("show");
 }
 
+function getCourseFromDB(courseCode) {
+  docRef = db.collection("courseData").doc(courseCode);
+
+  docRef
+    .get()
+    .then(function(doc) {
+      if (doc.exists) {
+        console.log("Document data:", doc.data());
+        return doc.data();
+      } else {
+        docRef.set({});
+      }
+    })
+    .catch(function(error) {
+      console.log("Error getting document:", error);
+    });
+  return {};
+}
+
 function setCourseDescriptionBox(course) {
   while (courseDescriptionBox.hasChildNodes()) {
     courseDescriptionBox.removeChild(courseDescriptionBox.lastChild);
@@ -1281,14 +1318,34 @@ function setCourseDescriptionBox(course) {
     courseDescriptionBox.appendChild(paragraph);
   }
 
-  courseDescriptionBox.appendChild(document.createElement("hr"));
-  createSyllabusUploadBox(courseDescriptionBox);
+  // dbCourseInfo = getCourseFromDB(course.courseCode)
+
+  docRef = db.collection("courseData").doc(course.courseCode);
+
+  docRef
+    .get()
+    .then(function(doc) {
+      if (doc.exists) {
+        console.log("Document data:", doc.data());
+      } else {
+        docRef.set({});
+      }
+      courseDescriptionBox.appendChild(document.createElement("hr"));
+      createSyllabusUploadBox(courseDescriptionBox, doc.data());
+      courseDescriptionVisible();
+    })
+    .catch(function(error) {
+      console.log("Error getting document:", error);
+    });
+
+  //courseDescriptionBox.appendChild(document.createElement("hr"));
+  //createSyllabusUploadBox(courseDescriptionBox, dbCourseInfo);
 
   minimizeArrowPointUp();
   courseDescriptionVisible();
 }
 
-function createSyllabusUploadBox(courseDescriptionBox) {
+function createSyllabusUploadBox(courseDescriptionBox, dbCourseInfo) {
   const icon = document.createElement("i");
   icon.classList.add("upload-syllabus-button");
   icon.classList.add("icon");
@@ -1296,12 +1353,18 @@ function createSyllabusUploadBox(courseDescriptionBox) {
   icon.addEventListener("click", showUploadModal);
 
   const paragraph = document.createElement("p");
-  const link = document.createElement("a");
-  link.textContent = "Syllabus (2019)";
-  var hreflink = document.createAttribute("href");
-  hreflink.value = "https://www.google.com";
-  link.attributes.setNamedItem(hreflink);
-  paragraph.appendChild(link);
+
+  if (dbCourseInfo.syllabusData !== undefined) {
+    const link = document.createElement("a");
+    link.textContent = "Syllabus (2019)";
+    var hreflink = document.createAttribute("href");
+    hreflink.value = dbCourseInfo.syllabusData;
+    link.attributes.setNamedItem(hreflink);
+    paragraph.appendChild(link);
+  } else {
+    paragraph.textContent = "Add a syllabus";
+  }
+
   paragraph.appendChild(icon);
 
   courseDescriptionBox.appendChild(paragraph);
